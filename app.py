@@ -24,7 +24,7 @@ def aire(box):
     x1, y1, x2, y2 = box
     return (x2-x1) * (y2-y1)
 
-def analyser_image(image_pil, seuil_surcharge, conf_min_detection):
+def analyser_image(image_pil, seuil_surcharge, conf_min_detection, distance_max_facteur=2.5):
     img = cv2.cvtColor(np.array(image_pil.convert("RGB")), cv2.COLOR_RGB2BGR)
     img_h, img_w = img.shape[:2]
     aire_image = img_h * img_w
@@ -53,17 +53,30 @@ def analyser_image(image_pil, seuil_surcharge, conf_min_detection):
             fiabilite = "fiable" if conf >= SEUIL_CONFIANCE_BASSE else "à vérifier"
             motos_valides.append((m_box, fiabilite))
 
+    # --- Association passager-moto AVEC seuil de distance maximale ---
+    # Une personne trop éloignée de toute moto n'est associée à aucune
+    # (traitée comme un piéton, pas comme un passager forcé)
     associations = {i: [] for i in range(len(motos_valides))}
     for p_box in personnes:
         centre_p = centre(p_box)
         meilleure_moto, meilleure_distance = None, float("inf")
+
         for i, (m_box, _) in enumerate(motos_valides):
             d = distance(centre_p, centre(m_box))
-            if d < meilleure_distance:
+
+            # Distance maximale acceptable, proportionnelle à la taille de la moto
+            largeur_moto = m_box[2] - m_box[0]
+            hauteur_moto = m_box[3] - m_box[1]
+            diagonale_moto = math.hypot(largeur_moto, hauteur_moto)
+            distance_max = diagonale_moto * distance_max_facteur
+
+            if d < meilleure_distance and d <= distance_max:
                 meilleure_distance = d
                 meilleure_moto = i
+
         if meilleure_moto is not None:
             associations[meilleure_moto].append(p_box)
+        # sinon : la personne est ignorée (trop loin de toute moto détectée)
 
     img_annotated = img.copy()
     resume_lignes = []
