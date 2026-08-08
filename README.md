@@ -9,8 +9,7 @@ Système de vision par ordinateur pour détecter automatiquement la surcharge de
 
 - **Application déployée :** https://moto-surcharge.streamlit.app
 - **Article scientifique (PDF) :** [`article/article.pdf`](./article/article.pdf)
-- **Présentation (démo day) :** [`presentation/presentation_demoday.pptx`](./presentation/presentation_demoday.pptx)
-- **Notebook d'expérimentation (Colab) :** [lien à insérer ici]
+- **Notebook d'expérimentation (Colab) :** https://colab.research.google.com/drive/1dP48-ucCO43oaix10gtRv26BZ5y7Qv7s?usp=sharing
 
 ## Résultats clés
 
