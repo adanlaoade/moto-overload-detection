@@ -1,32 +1,48 @@
-# Détection de surcharge de passagers sur motos par vision artificielle
+# Détection automatique de la surcharge de passagers sur motos par vision artificielle
 
-Système de vision par ordinateur pour détecter automatiquement la surcharge de passagers sur des motos au Bénin — zemidjan comme motos personnelles — avec module optionnel de lecture de plaque d'immatriculation.
+**LUBUNGU KISAMBULA Pacifique, ADANLAO Adéyinka Laurinda**
+*AMA — Académie des Mathématiques Appliquées, Groupe 1*
 
-## Démo en ligne
+Système de vision par ordinateur pour détecter automatiquement la surcharge de passagers sur des motos au Bénin — zemidjan comme motos personnelles — avec module optionnel de lecture de plaque d'immatriculation. Ce travail s'inscrit dans la dynamique de vidéoprotection engagée par le gouvernement béninois (Conseil des ministres du 4 mars 2026).
 
-**Application déployée :** https://moto-surcharge.streamlit.app
+## Liens
 
-## Contexte
+- **Application déployée :** https://moto-surcharge.streamlit.app
+- **Article scientifique (PDF) :** [`article/article.pdf`](./article/article.pdf)
+- **Présentation (démo day) :** [`presentation/presentation_demoday.pptx`](./presentation/presentation_demoday.pptx)
+- **Notebook d'expérimentation (Colab) :** [lien à insérer ici]
 
-Au Bénin, la surcharge de passagers sur moto (zemidjan ou usage personnel) est fréquente et difficile à contrôler manuellement. Ce projet explore la faisabilité d'un contrôle automatisé par vision artificielle, applicable à l'ensemble des motocyclistes, pas seulement au transport rémunéré.
+## Résultats clés
+
+| Métrique | Valeur |
+|---|---|
+| Exactitude de statut (conforme/surcharge) | 66,4 % |
+| Précision (classe surcharge) | 92,7 % |
+| Rappel (classe surcharge) | 57,3 % |
+| Corpus d'évaluation | 250 images annotées (Roboflow *Tripple_Riding*) |
+| Vérification contextuelle | 134 images de motocyclistes béninois |
+
+Détails complets, méthodologie et limites : voir l'article scientifique.
 
 ## Fonctionnement
 
-1. **Détection** : YOLOv8 (pré-entraîné sur COCO) détecte motos et personnes dans l'image.
-2. **Association passager-moto** : une logique géométrique (chevauchement horizontal, puis affinée avec normalisation par échelle) relie chaque personne détectée à la moto correspondante.
-3. **Classification** : si le nombre de personnes associées à une moto dépasse un seuil réglementaire (réglable), la moto est classée en surcharge.
-4. **Module ANPR (optionnel)** : tentative de lecture de plaque d'immatriculation en cas de surcharge détectée (preuve de concept, cf. limites).
+1. **Détection** : YOLOv8n (pré-entraîné COCO) détecte motos et personnes ; YOLOv8n-pose extrait les points-clés corporels (posture).
+2. **Association passager-moto** : normalisation géométrique par l'échelle de la moto + résolution par algorithme hongrois (assignment optimal), avec déduplication des détections dupliquées par IoU. Seuil de détection moto calibré empiriquement à 0,20.
+3. **Classification** : si le nombre de personnes associées à une moto dépasse un seuil réglementaire (réglable, par défaut 3), la moto est classée en surcharge.
+4. **Module ANPR (optionnel)** : tentative de lecture de plaque d'immatriculation en cas de surcharge détectée — preuve de concept, non fiabilisée (voir limites).
 
 ## Stack technique
 
-- Python, YOLOv8 (Ultralytics)
-- OpenCV
-- Streamlit (interface web)
-- Déployé sur Streamlit Community Cloud
+- Python, YOLOv8 / YOLOv8-pose (Ultralytics)
+- OpenCV, SciPy (algorithme hongrois)
+- Streamlit (interface web), déployé sur Streamlit Community Cloud
+- EasyOCR (module ANPR expérimental)
 
 ## Installation locale
 
 ```bash
+git clone https://github.com/adanlaoade/moto-overload-detection.git
+cd moto-overload-detection
 pip install -r requirements.txt
 streamlit run app.py
 ```
@@ -34,28 +50,31 @@ streamlit run app.py
 ## Structure du repo
 
 ```
-├── app.py                  # Application Streamlit principale
+├── app.py                  # Application Streamlit (pipeline final)
 ├── requirements.txt        # Dépendances Python
-├── packages.txt             # Dépendances système (libGL, etc.)
-├── docs/                    # Documentation méthodologique
+├── packages.txt             # Dépendances système (libgl1, etc.)
+├── src/                     # Scripts de pipeline / nettoyage de données
+├── results/                 # Graphiques d'analyse (fig1 à fig4)
+├── article/                 # Article scientifique (.tex + .pdf)
+├── presentation/             # Support de présentation (.pptx)
+├── LICENSE
 └── README.md
 ```
-## Notebook d'expérimentation
-
-Le notebook complet (essais, calibrage, évaluation) est disponible ici :
-https://colab.research.google.com/drive/1dP48-ucCO43oaix10gtRv26BZ5y7Qv7s?usp=sharing
 
 ## Méthodologie et limites
 
-Ce projet repose sur l'assemblage de modèles pré-entraînés (YOLOv8, EasyOCR) plutôt qu'un réentraînement complet, choix assumé compte tenu des contraintes de temps du projet. Plusieurs approches d'association passager-moto ont été testées et comparées (voir article scientifique et documentation dans `docs/`). Les limites principales identifiées :
+Ce projet repose sur l'assemblage de modèles pré-entraînés (YOLOv8, YOLOv8-pose, EasyOCR) plutôt qu'un réentraînement complet, choix assumé et documenté comme contribution (approche *training-free* pour un contexte sans corpus annoté local). Cinq approches d'association passager-moto ont été testées et comparées itérativement (voir article scientifique, section Méthodologie).
 
-- L'association passager-moto par méthode géométrique plafonne en scène encombrée (piétons proches, occlusion), cohérent avec la littérature du domaine.
+Limites principales :
+
+- Le rappel (57,3 %) reste modéré : environ 43 % des surcharges réelles ne sont pas détectées, principalement en cas d'occlusion extrême de la moto par les passagers.
+- Les résultats quantitatifs portent sur un corpus externe de référence (majoritairement indien) ; la vérification sur le contexte béninois reste qualitative, faute de vérité terrain indépendante disponible à ce stade.
 - Le module de lecture de plaque reste une preuve de concept, non fiabilisé pour un usage de verbalisation automatique.
-- L'évaluation s'appuie sur un corpus d'images limité, pas sur un dataset annoté à grande échelle spécifique au contexte béninois.
+- Considérations éthiques (proportionnalité, biais de représentation, impact socio-économique) détaillées dans l'article scientifique, section Discussion.
 
-## Auteur
+## Auteurs
 
-Projet réalisé dans un cadre académique.
+LUBUNGU KISAMBULA Pacifique, ADANLAO Adéyinka Laurinda — AMA, Groupe 1
 
 ## Licence
 
