@@ -40,6 +40,10 @@ streamlit run app.py
 ├── docs/                    # Documentation méthodologique
 └── README.md
 ```
+## Notebook d'expérimentation
+
+Le notebook complet (essais, calibrage, évaluation) est disponible ici :
+https://colab.research.google.com/drive/1dP48-ucCO43oaix10gtRv26BZ5y7Qv7s?usp=sharing
 
 ## Méthodologie et limites
 
